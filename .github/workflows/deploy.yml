@@ -18,7 +18,7 @@ jobs:
 
       - name: Run Semgrep scan on Terraform
         id: semgrep
-        run: semgrep --config=p/terraform .
+        run: semgrep --config p/terraform --json > semgrep-results.json
 
       - name: Send results to Slack
         run: |
