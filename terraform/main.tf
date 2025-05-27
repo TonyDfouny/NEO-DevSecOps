@@ -78,4 +78,3 @@ resource "aws_instance" "ghost" {
   }
 }
 
-#Deploy
