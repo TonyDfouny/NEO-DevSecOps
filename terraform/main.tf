@@ -25,7 +25,7 @@ resource "aws_instance" "ghost" {
 
   vpc_security_group_ids = [aws_security_group.ghost_sg.id]
 
-  key_name = var.key_name # You'll define this later if needed
+  #key_name = var.key_name # You'll define this later if needed
 }
 
 resource "aws_security_group" "ghost_sg" {
