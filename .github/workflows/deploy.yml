@@ -21,7 +21,7 @@ jobs:
         run: semgrep --config=p/terraform .
 
       - name: Notify Slack if Semgrep finds issues
-        if: failure() && steps.semgrep.outcome != 'success'
+        if: failure()
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
