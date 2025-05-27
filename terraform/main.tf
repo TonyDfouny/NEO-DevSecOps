@@ -3,8 +3,8 @@ provider "aws" {
 }
 
 resource "aws_instance" "ghost" {
-  ami           = "ami-0c02fb55956c7d316" # Ubuntu Server 22.04 LTS (Free Tier)
-  instance_type = "t2.micro"             # Free Tier eligible
+  ami           = data.aws_ami.ubuntu.id 
+  instance_type = "t2.micro"            
 
   user_data = <<-EOF
               #!/bin/bash
