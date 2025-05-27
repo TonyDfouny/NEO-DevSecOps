@@ -55,6 +55,19 @@ resource "aws_security_group" "ghost_sg" {
   }
 }
 
+#Test SemGrep
+resource "aws_security_group" "insecure_sg" {
+  name        = "insecure-sg"
+  description = "Security group with open SSH access"
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]  # <-- Open to the entire internet (bad practice)
+  }
+}
+
 # EC2 instance running Ghost CMS
 resource "aws_instance" "ghost" {
   ami           = data.aws_ami.ubuntu.id
