@@ -20,13 +20,19 @@ jobs:
         id: semgrep
         run: semgrep --config=p/terraform .
 
-      - name: Notify Slack if Semgrep finds issues
-        if: failure()
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - name: Send results to Slack
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"⚠️ *Semgrep* found security issues in the Terraform code. Please check the GitHub Actions logs for details."}' $SLACK_WEBHOOK_URL
-
+          findings=$(jq -r '.results | length' semgrep-results.json)
+          if [ "$findings" -gt 0 ]; then
+            summary=$(jq -r '.results[] | "\(.check_id): \(.message) in \(.path):\(.start.line)"' semgrep-results.json | head -n 5)
+            curl -X POST -H 'Content-type: application/json' \
+              --data "{\"text\":\"🚨 Semgrep found *$findings* issue(s):\n$summary\n\n(Only showing first 5 results)\"}" \
+              ${{ secrets.SLACK_WEBHOOK_URL }}
+          else
+            curl -X POST -H 'Content-type: application/json' \
+              --data '{"text":"✅ Semgrep scan completed. No issues found."}' \
+              ${{ secrets.SLACK_WEBHOOK_URL }}
+          fi
   deploy:
     needs: semgrep_scan
     if: success() && needs.semgrep_scan.result == 'success'
