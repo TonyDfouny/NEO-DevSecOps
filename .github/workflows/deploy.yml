@@ -5,7 +5,36 @@ on:
     branches:
       - main
 
+
 jobs:
+  semgrep_scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Semgrep
+        run: pip install semgrep
+
+      - name: Run Semgrep scan on Terraform
+        id: semgrep
+        run: semgrep --config=p/terraform .
+
+      - name: Notify Slack if Semgrep finds issues
+        if: failure() && steps.semgrep.outcome != 'success'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"text":"⚠️ *Semgrep* found security issues in the Terraform code. Please check the GitHub Actions logs for details."}' $SLACK_WEBHOOK_URL
+
+  deploy:
+    needs: semgrep_scan
+    if: success() && needs.semgrep_scan.result == 'success'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      
   terraform:
     name: Deploy to AWS with Terraform
     runs-on: ubuntu-latest
