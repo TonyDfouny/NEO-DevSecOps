@@ -24,6 +24,16 @@ data "aws_vpc" "default" {
   default = true
 }
 
+terraform {
+  backend "s3" {
+    bucket         = "neo-tony-devsecops-state"  # Same as the bucket you created
+    key            = "ghost/terraform.tfstate"
+    region         = "eu-north-1"
+    dynamodb_table = "terraform-lock"
+    encrypt        = true
+  }
+}
+
 # Security Group to allow HTTP and SSH
 resource "aws_security_group" "ghost_sg" {
   name        = "ghost-sg"
@@ -51,19 +61,6 @@ resource "aws_security_group" "ghost_sg" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-#Test SemGrep
-resource "aws_security_group" "insecure_sg" {
-  name        = "insecure-sg"
-  description = "Security group with open SSH access"
-
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  # <-- Open to the entire internet (bad practice)
   }
 }
 
