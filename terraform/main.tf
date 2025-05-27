@@ -77,3 +77,5 @@ resource "aws_instance" "ghost" {
     Name = "GhostInstance"
   }
 }
+
+#Deploy
