@@ -2,35 +2,32 @@ provider "aws" {
   region = "eu-north-1"
 }
 
-resource "aws_instance" "ghost" {
-  ami           = data.aws_ami.ubuntu.id 
-  instance_type = "t2.micro"            
+# Fetch latest Ubuntu 22.04 LTS AMI in eu-north-1
+data "aws_ami" "ubuntu" {
+  most_recent = true
 
-  user_data = <<-EOF
-              #!/bin/bash
-              curl -sL https://deb.nodesource.com/setup_18.x | bash -
-              apt-get update
-              apt-get install -y nodejs nginx mysql-server
-              npm install ghost-cli -g
-
-              adduser --disabled-password --gecos "" ghost
-              mkdir -p /var/www/ghost
-              chown ghost:ghost /var/www/ghost
-              sudo -u ghost ghost install --dir /var/www/ghost --no-prompt --url=http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4) --db=sqlite3 --start
-            EOF
-
-  tags = {
-    Name = "GhostInstance"
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
   }
 
-  vpc_security_group_ids = [aws_security_group.ghost_sg.id]
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
 
-  #key_name = var.key_name # You'll define this later if needed
+  owners = ["099720109477"] # Canonical
 }
 
+# Get the default VPC in the region
+data "aws_vpc" "default" {
+  default = true
+}
+
+# Security Group to allow HTTP and SSH
 resource "aws_security_group" "ghost_sg" {
   name        = "ghost-sg"
-  description = "Allow HTTP and SSH"
+  description = "Allow HTTP (80) and SSH (22) traffic"
   vpc_id      = data.aws_vpc.default.id
 
   ingress {
@@ -57,9 +54,26 @@ resource "aws_security_group" "ghost_sg" {
   }
 }
 
-data "aws_vpc" "default" {
-  default = true
+# EC2 instance running Ghost CMS
+resource "aws_instance" "ghost" {
+  ami           = data.aws_ami.ubuntu.id
+  instance_type = "t2.micro"
+  vpc_security_group_ids = [aws_security_group.ghost_sg.id]
+
+  user_data = <<-EOF
+    #!/bin/bash
+    curl -sL https://deb.nodesource.com/setup_18.x | bash -
+    apt-get update -y
+    apt-get install -y nodejs nginx mysql-server
+    npm install ghost-cli -g
+
+    adduser --disabled-password --gecos "" ghost
+    mkdir -p /var/www/ghost
+    chown ghost:ghost /var/www/ghost
+    sudo -u ghost ghost install --dir /var/www/ghost --no-prompt --url=http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4) --db=sqlite3 --start
+  EOF
+
+  tags = {
+    Name = "GhostInstance"
+  }
 }
-
-# Triggering deployment
-
