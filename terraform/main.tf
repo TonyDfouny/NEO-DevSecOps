@@ -24,16 +24,6 @@ data "aws_vpc" "default" {
   default = true
 }
 
-terraform {
-  backend "s3" {
-    bucket         = "neo-tony-devsecops-state"  # Same as the bucket you created
-    key            = "ghost/terraform.tfstate"
-    region         = "eu-north-1"
-    dynamodb_table = "terraform-lock"
-    encrypt        = true
-  }
-}
-
 # Security Group to allow HTTP and SSH
 resource "aws_security_group" "ghost_sg" {
   name        = "ghost-sg"
